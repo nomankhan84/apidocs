@@ -1,0 +1,98 @@
+# Profile Update API
+
+This endpoint allows a logged-in user to update their profile information. It validates incoming data, updates the profile and user details accordingly, and persists the changes using Doctrine's Entity Manager.
+
+## Table of Contents
+
+- [Overview](#overview)
+- [Endpoint Details](#endpoint-details)
+- [Code Explanation](#code-explanation)
+- [Request Parameters](#request-parameters)
+- [Response Format](#response-format)
+- [Error Handling](#error-handling)
+- [Testing with Postman](#testing-with-postman)
+- [Conclusion](#conclusion)
+
+## Overview
+
+The **Profile Update API** provides a secure way for authenticated users to update their profile information. It includes validations for names, URLs, mobile numbers, country codes, and gender. Additionally, it triggers reward eligibility for specific tasks when certain fields (like bio and Twitter URL) are updated.
+
+## Endpoint Details
+
+- **URL:** `/profile/update`
+- **HTTP Method:** PUT
+- **Route Name:** `profile.update`
+
+## Code Explanation
+
+### Authentication
+- The endpoint begins by authenticating the user using the request data.
+- If the user is not authenticated, the code redirects to a `forbidden` route.
+
+### Project Validation
+- Extracts the authenticated user and application name.
+- Checks if the application name is valid using `ProjectList::isAllowedProject($appName)`. If not valid, returns a JSON error message.
+
+### Input Validations and Updates
+
+1. **First Name & Last Name:**
+   - Checks if provided, trims extra spaces, capitalizes the name.
+   - Validates that the names contain only alphabetic characters. Returns an error if not.
+
+2. **User Type:**
+   - Accepts only `creator` or `hirer`.
+   - Validates that the input is alphabetic and belongs to the allowed list.
+
+3. **Bio:**
+   - If a bio is provided, updates the profile and triggers a reward check via `sendRewardIfEligible`.
+
+4. **Website & Social Media URLs:**
+   - Validates `website`, `youtube_url`, `instagram_url`, `tiktok_url`, and `twitter_url` using PHP's URL validation filter.
+   - If the URL is invalid, returns an error.
+   - For Twitter, triggers a reward check upon successful validation.
+
+5. **Mobile Number:**
+   - Validates using a regular expression to ensure proper formatting.
+  
+6. **Country Code:**
+   - Validates using a regular expression to allow up to four digits, optionally prefixed with a `+`.
+
+7. **Gender:**
+   - Accepts only `male`, `female`, or `other`. Returns an error if an invalid value is provided.
+
+### Persistence
+- After updating the user and profile entities, the changes are persisted using Doctrine's Entity Manager with successive `persist()` and `flush()` calls.
+
+### Response
+- On success, returns a JSON response with a success message.
+- If any validation fails, returns a JSON response with an error message and a 400 status code.
+
+## Request Parameters
+
+The following parameters can be sent in the PUT request (all are optional, but will be processed if provided):
+
+- **first_name**: User's first name (alphabetic characters only).
+- **last_name**: User's last name (alphabetic characters only).
+- **user_type**: Should be either `creator` or `hirer` (case-insensitive).
+- **bio**: A short biography of the user.
+- **website**: A valid URL for the user's website.
+- **youtube_url**: A valid URL for the user's YouTube channel.
+- **instagram_url**: A valid URL for the user's Instagram profile.
+- **tiktok_url**: A valid URL for the user's TikTok profile.
+- **twitter_url**: A valid URL for the user's Twitter profile.
+- **mobile_number**: A valid mobile number (must match the regex pattern).
+- **country_code**: A valid country code (e.g., `+1`).
+- **gender**: Must be one of `male`, `female`, or `other`.
+
+## Response Format
+
+### Success Response
+
+- **HTTP Status:** 200
+- **Body:**
+
+  ```json
+  {
+      "message": "Your profile was updated!",
+      "status": "success"
+  }
